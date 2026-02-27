@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import './styles.css';
 import type { ParsedDocument, ReaderSettings, SavedReading, SourceType, StudyFlashcard, StudyQuizItem, UiLanguage } from './lib/types';
@@ -49,6 +49,8 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
   const [hits, setHits] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showTopBar, setShowTopBar] = useState(true);
+  const [compactTopBar, setCompactTopBar] = useState(false);
+  const lastScrollY = useRef(0);
   const [isLeftOpen, setIsLeftOpen] = useState(() => localStorage.getItem(LEFT_KEY) !== '0');
   const [isRightOpen, setIsRightOpen] = useState(() => localStorage.getItem(RIGHT_KEY) !== '0');
   const [savedReadings, setSavedReadings] = useState<SavedReading[]>([]);
@@ -117,14 +119,38 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
   useEffect(() => {
     const onScroll = () => {
       const total = document.body.scrollHeight - window.innerHeight;
-      setScrollProgress(total <= 0 ? 0 : Math.min(100, Math.max(0, (window.scrollY / total) * 100)));
-      if (!settings.distractionFree) return;
-      setShowTopBar(false);
-      window.setTimeout(() => setShowTopBar(true), 700);
+      const y = window.scrollY;
+      setScrollProgress(total <= 0 ? 0 : Math.min(100, Math.max(0, (y / total) * 100)));
+
+      if (!doc) {
+        setCompactTopBar(false);
+        setShowTopBar(true);
+        return;
+      }
+
+      setCompactTopBar(y > 24);
+
+      if (y > lastScrollY.current + 8 && y > 130) {
+        setShowTopBar(false);
+      } else if (y < lastScrollY.current - 8 || y < 70) {
+        setShowTopBar(true);
+      }
+
+      lastScrollY.current = y;
     };
+
+    const reveal = () => setShowTopBar(true);
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [settings.distractionFree]);
+    window.addEventListener('mousemove', reveal);
+    window.addEventListener('keydown', reveal);
+    onScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', reveal);
+      window.removeEventListener('keydown', reveal);
+    };
+  }, [doc]);
 
   async function persist(reading: SavedReading) {
     await saveReading(reading);
@@ -285,7 +311,7 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
   return (
     <div className="app-shell">
       <div className="progress-bar" style={{ width: `${scrollProgress}%` }} />
-      <header className={`topbar ${showTopBar ? '' : 'hidden'}`}>
+      <header className={`topbar ${showTopBar ? '' : 'hidden'} ${compactTopBar ? 'compact' : ''}`}>
         <div className="topbar-left">
           <button type="button" onClick={() => setIsLeftOpen((v) => !v)} aria-label="Toggle Main menu">☰</button>
           <h1>{labels.appName}</h1>
