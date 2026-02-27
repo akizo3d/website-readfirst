@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './styles.css';
 import type { ParsedDocument, ReaderSettings, TranslationProviderConfig } from './lib/types';
 import { parseDocx, parsePdf } from './lib/parser';
 import { settingsStore } from './lib/storage';
 import { translateChunk } from './lib/translation';
+import { LeftSidebar } from './components/LeftSidebar';
+import { ReaderContent } from './components/ReaderContent';
+import { RightSidebar } from './components/RightSidebar';
 
 function replaceChunkText(html: string, translatedChunks: string[]) {
   const doc = new DOMParser().parseFromString(`<article>${html}</article>`, 'text/html');
@@ -22,28 +25,44 @@ const initialProvider: TranslationProviderConfig = {
   model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
 };
 
+const LEFT_KEY = 'readerfirst-left-open';
+const RIGHT_KEY = 'readerfirst-right-open';
+
 export default function App() {
   const [doc, setDoc] = useState<ParsedDocument | null>(null);
-  const [translatedHtml, setTranslatedHtml] = useState<string>('');
+  const [translatedHtml, setTranslatedHtml] = useState('');
   const [mode, setMode] = useState<'original' | 'pt-BR'>('original');
   const [settings, setSettings] = useState<ReaderSettings>(() => settingsStore.load());
   const [dragging, setDragging] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [translating, setTranslating] = useState(false);
   const [translationError, setTranslationError] = useState('');
-  const [panelOpen, setPanelOpen] = useState(false);
   const [showTopBar, setShowTopBar] = useState(true);
-  const readerRef = useRef<HTMLElement | null>(null);
+  const [isLeftOpen, setIsLeftOpen] = useState(() => localStorage.getItem(LEFT_KEY) !== '0');
+  const [isRightOpen, setIsRightOpen] = useState(() => localStorage.getItem(RIGHT_KEY) !== '0');
 
   useEffect(() => {
     settingsStore.save(settings);
   }, [settings]);
 
   useEffect(() => {
+    localStorage.setItem(LEFT_KEY, isLeftOpen ? '1' : '0');
+  }, [isLeftOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(RIGHT_KEY, isRightOpen ? '1' : '0');
+  }, [isRightOpen]);
+
+  useEffect(() => {
     let timeout: number | undefined;
     const onScroll = () => {
+      const total = document.body.scrollHeight - window.innerHeight;
+      const pct = total <= 0 ? 0 : Math.min(100, Math.max(0, (window.scrollY / total) * 100));
+      setScrollProgress(pct);
+
       if (!settings.distractionFree) {
         return;
       }
@@ -51,11 +70,18 @@ export default function App() {
       clearTimeout(timeout);
       timeout = window.setTimeout(() => setShowTopBar(true), 850);
     };
+
+    const onMove = () => setShowTopBar(true);
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('mousemove', () => setShowTopBar(true));
-    window.addEventListener('keydown', () => setShowTopBar(true));
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('keydown', onMove);
+    onScroll();
+
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('keydown', onMove);
     };
   }, [settings.distractionFree]);
 
@@ -107,22 +133,13 @@ export default function App() {
     return articleHtml.replace(regex, '<mark>$1</mark>');
   }, [articleHtml, query]);
 
-  const progressPct = useMemo(() => {
-    const total = document.body.scrollHeight - window.innerHeight;
-    if (total <= 0) {
-      return 0;
-    }
-    return Math.min(100, Math.max(0, (window.scrollY / total) * 100));
-  }, [articleHtml]);
-
   const translate = async () => {
-    if (!doc) {
-      return;
-    }
+    if (!doc) return;
     if (!initialProvider.apiKey) {
       setTranslationError('Configure VITE_TRANSLATION_API_KEY no .env para habilitar tradução.');
       return;
     }
+
     setTranslating(true);
     setTranslationError('');
     const translated: string[] = [];
@@ -132,8 +149,7 @@ export default function App() {
         translated[i] = await translateChunk(doc.textChunks[i], initialProvider);
         setProgress(Math.round(((i + 1) / doc.textChunks.length) * 100));
       }
-      const html = replaceChunkText(doc.html, translated);
-      setTranslatedHtml(html);
+      setTranslatedHtml(replaceChunkText(doc.html, translated));
       setMode('pt-BR');
     } catch (error) {
       setTranslationError(error instanceof Error ? error.message : 'Falha na tradução');
@@ -144,17 +160,20 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="progress-bar" style={{ width: `${progressPct}%` }} />
+      <div className="progress-bar" style={{ width: `${scrollProgress}%` }} />
 
       <header className={`topbar ${showTopBar ? '' : 'hidden'}`}>
-        <h1>ReaderFirst</h1>
+        <div className="topbar-left">
+          <button type="button" onClick={() => setIsLeftOpen((v) => !v)} aria-label="Alternar Main menu">☰</button>
+          <h1>ReaderFirst</h1>
+        </div>
         <div className="actions">
           <label className="upload-btn" aria-label="Selecionar arquivo">
             Upload
             <input type="file" accept=".pdf,.docx" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>
-          <button onClick={() => setPanelOpen((v) => !v)} aria-expanded={panelOpen}>Aa</button>
-          <button onClick={() => window.print()}>Print A4</button>
+          <button type="button" onClick={() => setIsRightOpen((v) => !v)} aria-label="Alternar Appearance">Aa</button>
+          <button type="button" onClick={() => window.print()}>Print A4</button>
         </div>
       </header>
 
@@ -170,9 +189,7 @@ export default function App() {
             e.preventDefault();
             setDragging(false);
             const file = e.dataTransfer.files?.[0];
-            if (file) {
-              void onFile(file);
-            }
+            if (file) void onFile(file);
           }}
         >
           <h2>Upload → Conversão → Leitura</h2>
@@ -181,62 +198,26 @@ export default function App() {
       )}
 
       {doc && (
-        <>
-          <aside className={`controls ${panelOpen ? 'open' : ''}`}>
-            <label>Busca no texto<input type="search" onChange={(e) => handleSearch(e.target.value)} placeholder="Pesquisar..." /></label>
-            <small>{hits} resultados</small>
-            <label>Tema
-              <select value={settings.theme} onChange={(e) => setSettings((s) => ({ ...s, theme: e.target.value as ReaderSettings['theme'] }))}>
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="sepia">Sepia</option>
-              </select>
-            </label>
-            {[
-              ['fontSize', 'Fonte', 14, 30, 1],
-              ['lineHeight', 'Entrelinhas', 1.3, 2.2, 0.05],
-              ['maxWidthCh', 'Largura (ch)', 56, 92, 1],
-              ['paragraphSpacing', 'Espaço parágrafo', 0.6, 2.4, 0.1],
-              ['horizontalPadding', 'Margem horizontal', 12, 100, 1],
-              ['verticalPadding', 'Margem vertical', 12, 80, 1],
-              ['letterSpacing', 'Espaço letras', -0.2, 1.4, 0.05],
-            ].map(([key, label, min, max, step]) => (
-              <label key={key}>{label}
-                <input
-                  type="range"
-                  min={Number(min)}
-                  max={Number(max)}
-                  step={Number(step)}
-                  value={settings[key as keyof ReaderSettings] as number}
-                  onChange={(e) => setSettings((s) => ({ ...s, [key]: Number(e.target.value) }))}
-                />
-              </label>
-            ))}
-            <label className="row">
-              <input type="checkbox" checked={settings.distractionFree} onChange={(e) => setSettings((s) => ({ ...s, distractionFree: e.target.checked }))} />
-              Modo sem distração
-            </label>
-
-            <hr />
-            <button onClick={() => setMode('original')} className={mode === 'original' ? 'active' : ''}>Original</button>
-            <button onClick={() => void translate()} disabled={translating}>{translating ? `Traduzindo ${progress}%` : 'Traduzir pt-BR'}</button>
-            <button onClick={() => setMode('pt-BR')} disabled={!translatedHtml}>Mostrar pt-BR</button>
-            {translationError && <p className="error">{translationError}</p>}
-          </aside>
-
-          <nav className="toc" aria-label="Table of contents">
-            <h3>Conteúdo</h3>
-            <ul>
-              {doc.headings.map((heading) => (
-                <li key={heading.id} className={`l${heading.level}`}><a href={`#${heading.id}`}>{heading.text}</a></li>
-              ))}
-            </ul>
-          </nav>
-
-          <main className="reader" ref={readerRef}>
-            <article dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
-          </main>
-        </>
+        <div className="wiki-layout">
+          <LeftSidebar headings={doc.headings} isOpen={isLeftOpen} onToggle={() => setIsLeftOpen((v) => !v)} />
+          <ReaderContent html={highlightedHtml} />
+          <RightSidebar
+            isOpen={isRightOpen}
+            onToggle={() => setIsRightOpen((v) => !v)}
+            settings={settings}
+            setSettings={setSettings}
+            mode={mode}
+            setMode={setMode}
+            onTranslate={() => void translate()}
+            translating={translating}
+            progress={progress}
+            translatedReady={Boolean(translatedHtml)}
+            query={query}
+            onSearch={handleSearch}
+            hits={hits}
+            translationError={translationError}
+          />
+        </div>
       )}
     </div>
   );
