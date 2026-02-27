@@ -188,3 +188,62 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
   h1, h2, h3 { break-after: avoid-page; break-inside: avoid; }
   img, table, blockquote, figure { break-inside: avoid; }
 }
+
+
+.home-page {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  gap: 18px;
+  text-align: center;
+  padding: 20px;
+}
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 380px));
+  gap: 14px;
+}
+.home-card {
+  display: block;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 76%);
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: var(--shadow);
+}
+.home-card p { color: var(--muted); }
+
+.auth-strip {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--muted), transparent 78%);
+}
+.auth-strip input {
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 70%);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.markdown-composer {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.markdown-composer input,
+.markdown-composer textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 70%);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+@media (max-width: 920px) {
+  .home-cards { grid-template-columns: 1fr; }
+}

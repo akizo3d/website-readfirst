@@ -1,115 +1,66 @@
 # ReaderFirst
 
-ReaderFirst is a minimalist reading-first web app that converts uploaded PDF and DOCX files into semantic, book-like HTML focused on comfort, legibility, and accessibility. The interaction model is intentionally simple: **Upload → Conversion → Reading Controls → pt-BR Translation → Print A4**.
+ReaderFirst is now paginated as a **library with a librarian**:
+- **Home** with two product cards: Reader and Markdown Converter.
+- **Reader** for PDF/DOCX upload → conversion → reading (raw/enhanced + original/pt-BR).
+- **Markdown Converter** as first-class reading flow with the same reading controls, TOC, search, print, and save.
 
-## Architecture (short)
+## Tech
+- Vite + React + TypeScript
+- `pdfjs-dist`, `mammoth`, `dompurify`, `marked`
+- IndexedDB (`idb`) for local cache/fallback
+- Vercel serverless API routes for secure AI
+- Supabase Auth + Postgres metadata + Vercel Blob payload storage
 
-ReaderFirst is built with **Vite + React + TypeScript** and processes files mostly in the browser for privacy and speed. DOCX is converted with `mammoth`, PDF text is extracted with `pdfjs-dist`, and resulting HTML is sanitized with `DOMPurify` before rendering.
+## Routes
+- `/` Home
+- `/reader` Reader flow
+- `/markdown` Markdown converter flow
 
-The reading system is centered around semantic HTML + typographic controls persisted locally. Translation uses a configurable provider (`OpenAI` or `DeepL`) via `.env`, with chunk-based processing, retry/backoff, IndexedDB cache (`idb`), and glossary-protected terminology to maintain consistency in 3D design vocabulary.
-
-## Stack
-
-- React + TypeScript + Vite
-- `pdfjs-dist` for PDF text extraction
-- `mammoth` for DOCX → HTML conversion
-- `dompurify` for XSS-safe rendering
-- `idb` for translation cache (IndexedDB)
-- localStorage for reading preferences
-
-## Folder structure
-
-```txt
-.
-├─ .env.example
-├─ index.html
-├─ package.json
-├─ src/
-│  ├─ App.tsx
-│  ├─ main.tsx
-│  ├─ styles.css
-│  └─ lib/
-│     ├─ parser.ts
-│     ├─ storage.ts
-│     ├─ translation.ts
-│     └─ types.ts
-├─ tsconfig.app.json
-├─ tsconfig.json
-├─ tsconfig.node.json
-└─ vite.config.ts
-```
-
-## Install and run
-
+## Local run
 ```bash
-npm install
+npm ci
 cp .env.example .env
 npm run dev
 ```
 
 ## Build
-
 ```bash
 npm run build
-npm run preview
 ```
 
-## Translation configuration
+## Vercel/server env vars
+Set these in Vercel project settings:
+- `OPENAI_API_KEY`
+- `AI_MODEL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `BLOB_READ_WRITE_TOKEN`
 
-Set environment variables in `.env`:
+Client public vars:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-- `VITE_TRANSLATION_PROVIDER=openai` or `deepl`
-- `VITE_TRANSLATION_API_KEY=...`
-- `VITE_OPENAI_MODEL=gpt-4o-mini` (optional)
+## Database migration
+Run SQL in `db/migrations/001_readings.sql` on Supabase Postgres.
 
-### Privacy disclosure behavior
+## Cloud persistence model
+Metadata in Postgres (`readings` table) + full reading JSON payload in Blob (`blob_url`).
 
-The app sends **only chunk text content** required for translation. File binary metadata is not sent by the translator layer. Users can skip translation and continue fully local reading.
+## AI endpoints
+- `POST /api/enhance`
+- `POST /api/translate`
+- `POST /api/vision-caption`
+- `POST /api/study`
 
-## Features implemented
+All keys stay server-side (no `VITE_*` for AI secrets).
 
-- PDF + DOCX upload (drag-and-drop + file picker)
-- Semantic rendering with headings, paragraphs, lists, blockquotes, links, images/tables when present from source conversion
-- Auto-generated TOC with heading anchors
-- Dark theme by default; light + sepia themes
-- Reading controls (font size, line height, width measure, paragraph spacing, horizontal/vertical padding, letter spacing)
-- Preferences persisted locally
-- Translation toggle (Original / pt-BR)
-- Glossary/protected terms (topology, retopology, edge loop, UV, rig, skinning, normal map, PBR)
-- Translation chunking + progress + retry/backoff + local cache
-- In-document search with highlights
-- Reading progress bar
-- A4 print stylesheet with cleaner page breaks and hidden UI
-- Distraction-free mode (top bar auto-hide on scroll)
+## Basic import from old local storage to cloud
+1. Login from top auth strip in Reader/Markdown routes.
+2. Open each local saved reading and trigger a save operation (rename/open/update) to sync into cloud.
+3. Search/library list will then return cloud records across devices.
 
-## Accessibility and performance notes
-
-- Semantic heading hierarchy and landmark usage (`header`, `nav`, `main`, `article`)
-- Strong focus styles for keyboard users (`:focus-visible`)
-- High-contrast dark theme default
-- Local-first parsing to reduce latency and protect user privacy
-- Cached translations to reduce repeated API calls
-
-## PDF limitations (important)
-
-`pdfjs-dist` extracts text layers from digital PDFs. **Scanned PDFs** (image-only pages) may produce no text. In this case, ReaderFirst shows a message informing the user that OCR is required before import. This is expected behavior and not an app crash.
-
-## Acceptance checklist
-
-- [x] PDF and DOCX upload works (drag/drop and picker)
-- [x] TOC generation and anchor navigation works
-- [x] Dark mode default and reading controls persist locally
-- [x] pt-BR translation works with toggle and glossary protection
-- [x] Print A4 produces clean content-only output
-- [x] Performance and accessibility are designed for strong Lighthouse outcomes (target 90+)
-
-## Out of scope (intentionally)
-
-- Authentication/accounts
-- Social features/feed
-- Heavy animation or dashboard-style UI
-
-
-## Data schema migration note
-
-ReaderFirst saved items now also persist `enhancedHtml`, `enhancedHeadings`, `flashcards`, and `quiz` fields in IndexedDB for each reading. Older records remain readable and will be upgraded lazily when reopened and saved again.
+## Notes
+- Guest mode remains available via local IndexedDB fallback.
+- Raw/Enhanced and Original/pt-BR are independent view toggles.
+- UI language (EN/PT-BR) is independent from document language.

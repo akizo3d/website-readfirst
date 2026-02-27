@@ -12,19 +12,19 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export async function enhanceSection(sectionHtml: string, title: string) {
   return post<{ enhancedHtml: string; summary?: string; takeaways?: string[]; glossary?: string[] }>(
-    '/api/ai/enhance',
+    '/api/enhance',
     { sectionHtml, title },
   );
 }
 
 export async function askDocumentQuestion(question: string, context: string) {
-  return post<{ answer: string }>('/api/ai/study', { mode: 'qa', question, context });
+  return post<{ answer: string }>('/api/study', { mode: 'qa', question, context });
 }
 
 export async function generateFlashcards(context: string) {
-  return post<{ flashcards: StudyFlashcard[] }>('/api/ai/study', { mode: 'flashcards', context });
+  return post<{ flashcards: StudyFlashcard[] }>('/api/study', { mode: 'flashcards', context });
 }
 
 export async function generateQuiz(context: string) {
-  return post<{ quiz: StudyQuizItem[] }>('/api/ai/study', { mode: 'quiz', context });
+  return post<{ quiz: StudyQuizItem[] }>('/api/study', { mode: 'quiz', context });
 }

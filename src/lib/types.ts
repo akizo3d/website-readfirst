@@ -50,11 +50,14 @@ export interface StudyQuizItem {
   answer: string;
 }
 
+export type SourceType = 'pdf' | 'docx' | 'markdown';
+
 export interface SavedReading {
   id: string;
   userId: string;
   title: string;
   filename: string;
+  sourceType?: SourceType;
   createdAt: number;
   lastOpenedAt: number;
   tags: string[];
@@ -65,6 +68,7 @@ export interface SavedReading {
   enhancedHeadings?: HeadingItem[];
   textChunks: string[];
   progress: number;
+  documentHash?: string;
   flashcards?: StudyFlashcard[];
   quiz?: StudyQuizItem[];
 }
