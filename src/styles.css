@@ -1,0 +1,189 @@
+:root {
+  --bg: #111418;
+  --surface: #1a2027;
+  --text: #eff3f8;
+  --muted: #9aa6b3;
+  --accent: #77b0ff;
+  --rf-font-size: 19px;
+  --rf-line-height: 1.72;
+  --rf-width: 72ch;
+  --rf-para-space: 1em;
+  --rf-h-pad: 32px;
+  --rf-v-pad: 26px;
+  --rf-letter-spacing: 0px;
+}
+
+:root[data-theme='light'] {
+  --bg: #f7f7f2;
+  --surface: #ffffff;
+  --text: #1f2630;
+  --muted: #5e6875;
+  --accent: #245bb8;
+}
+
+:root[data-theme='sepia'] {
+  --bg: #f7ecd8;
+  --surface: #fff8ea;
+  --text: #332516;
+  --muted: #665444;
+  --accent: #5e3f1f;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Atkinson Hyperlegible", "Inter", system-ui, sans-serif;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in oklab, var(--bg), transparent 15%);
+  backdrop-filter: blur(9px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--muted), transparent 75%);
+  transition: transform .25s ease;
+}
+.topbar.hidden { transform: translateY(-110%); }
+.topbar button, .upload-btn {
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 60%);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 12px;
+}
+.actions { display: flex; gap: 8px; }
+
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 99;
+}
+
+.dropzone {
+  max-width: 680px;
+  margin: 14vh auto;
+  border: 1.5px dashed var(--muted);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  background: var(--surface);
+}
+.dropzone.dragging { border-color: var(--accent); }
+
+.controls {
+  position: fixed;
+  right: 16px;
+  top: 72px;
+  width: min(300px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 65%);
+  border-radius: 14px;
+  padding: 14px;
+  display: none;
+  z-index: 20;
+}
+.controls.open { display: grid; gap: 8px; }
+.controls label { display: grid; gap: 4px; font-size: 14px; }
+.controls .row { display: flex; align-items: center; gap: 8px; }
+.controls input, .controls select, .controls button {
+  width: 100%;
+  background: #0000;
+  color: var(--text);
+}
+
+.toc {
+  position: fixed;
+  left: 12px;
+  top: 76px;
+  width: 220px;
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  font-size: 14px;
+}
+.toc ul { list-style: none; padding-left: 0; }
+.toc .l2 { padding-left: 10px; }
+.toc .l3 { padding-left: 20px; }
+.toc a { color: var(--muted); text-decoration: none; }
+
+.reader {
+  width: min(var(--rf-width), calc(100vw - 280px));
+  margin: 40px auto;
+  padding: var(--rf-v-pad) var(--rf-h-pad);
+  background: var(--surface);
+  border-radius: 16px;
+}
+.reader article {
+  font-size: var(--rf-font-size);
+  line-height: var(--rf-line-height);
+  letter-spacing: var(--rf-letter-spacing);
+}
+.reader p { margin-block: var(--rf-para-space); }
+.reader :is(h1, h2, h3) {
+  line-height: 1.25;
+  margin-top: 2em;
+  margin-bottom: 0.7em;
+}
+.reader h1 { font-size: 2em; }
+.reader h2 { font-size: 1.55em; }
+.reader h3 { font-size: 1.25em; }
+.reader img, .reader table { max-width: 100%; }
+.reader blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  color: var(--muted);
+}
+.reader mark { background: #ffd54d; color: #141414; }
+.error { color: #ff8e8e; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 980px) {
+  .toc { display: none; }
+  .reader { width: min(var(--rf-width), calc(100vw - 20px)); }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .topbar, .controls, .toc, .progress-bar {
+    display: none !important;
+  }
+
+  .reader {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: white;
+  }
+
+  h1, h2, h3 {
+    break-after: avoid-page;
+    break-inside: avoid;
+  }
+
+  img, table, blockquote {
+    break-inside: avoid;
+  }
+}
