@@ -109,10 +109,16 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
     root.dataset.theme = settings.theme;
     root.style.setProperty('--rf-font-size', `${settings.fontSize}px`);
     root.style.setProperty('--rf-line-height', `${settings.lineHeight}`);
-    root.style.setProperty('--rf-width', `${settings.maxWidthCh}ch`);
+    const widthMap: Record<string, string> = {
+      standard: 'clamp(60ch, 55vw, 85ch)',
+      wide: 'clamp(70ch, 70vw, 120ch)',
+      full: 'min(90vw, 1400px)',
+    };
+    const widthExpr = widthMap[settings.widthMode || 'standard'];
+    root.style.setProperty('--rf-width', widthExpr);
     root.style.setProperty('--rf-para-space', `${settings.paragraphSpacing}em`);
-    root.style.setProperty('--rf-h-pad', `${settings.horizontalPadding}px`);
-    root.style.setProperty('--rf-v-pad', `${settings.verticalPadding}px`);
+    root.style.setProperty('--rf-h-pad', `clamp(16px, ${Math.max(2, settings.horizontalPadding / 8)}vw, ${settings.horizontalPadding}px)`);
+    root.style.setProperty('--rf-v-pad', `clamp(16px, ${Math.max(1.8, settings.verticalPadding / 10)}vw, ${settings.verticalPadding}px)`);
     root.style.setProperty('--rf-letter-spacing', `${settings.letterSpacing}px`);
   }, [settings]);
 
@@ -151,6 +157,18 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
       window.removeEventListener('keydown', reveal);
     };
   }, [doc]);
+
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth < 1500 && isLeftOpen && isRightOpen) {
+        setIsRightOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, [isLeftOpen, isRightOpen]);
 
   async function persist(reading: SavedReading) {
     await saveReading(reading);
@@ -364,7 +382,7 @@ function ReaderWorkspace({ sourceType }: { sourceType: SourceType }) {
 
       {enhancementProgress && <p className="enhancement-progress">{enhancementProgress}</p>}
 
-      <div className="wiki-layout">
+      <div className={`wiki-layout ${isLeftOpen ? 'left-open' : 'left-closed'} ${isRightOpen ? 'right-open' : 'right-closed'}`}>
         <LeftSidebar headings={activeHeadings} isOpen={isLeftOpen} onToggle={() => setIsLeftOpen((v) => !v)} labels={labels} savedReadings={savedReadings} onOpenSaved={(id) => void openSavedReading(id)} onRenameSaved={(id) => void renameSavedReading(id)} onDeleteSaved={(id) => void removeSavedReading(id)} />
         {doc && <ReaderContent html={highlightedHtml} />}
         {doc && <RightSidebar isOpen={isRightOpen} onToggle={() => setIsRightOpen((v) => !v)} settings={settings} setSettings={setSettings} query={query} onSearch={(term) => { setQuery(term); setHits(term ? (articleHtml.match(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')) || []).length : 0); }} hits={hits} labels={labels} question={question} onQuestionChange={setQuestion} onAsk={() => void askQuestionAction()} answer={answer} onGenerateFlashcards={() => void generateFlashcardsAction()} flashcards={flashcards} onGenerateQuiz={() => void generateQuizAction()} quiz={quiz} />}

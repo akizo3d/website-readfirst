@@ -104,7 +104,18 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
 }
 .dropzone.dragging { border-color: var(--accent); transform: translateY(-2px); }
 
-.wiki-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr) 270px; gap: 0; padding: 0 12px 12px; }
+.wiki-layout {
+  --left-col: 270px;
+  --right-col: 270px;
+  display: grid;
+  grid-template-columns: var(--left-col) minmax(0, 1fr) var(--right-col);
+  gap: 0;
+  padding: 0 12px 12px;
+  max-width: min(98vw, 2400px);
+  margin: 0 auto;
+}
+.wiki-layout.left-closed { --left-col: 70px; }
+.wiki-layout.right-closed { --right-col: 70px; }
 
 .left-sidebar, .right-sidebar {
   position: sticky;
@@ -117,8 +128,18 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
   overflow: hidden;
 }
 .left-sidebar.closed, .right-sidebar.closed { width: 70px; }
-.sidebar-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid color-mix(in srgb, var(--muted), transparent 82%); }
-.sidebar-head h2 { margin: 0; font-size: 15px; }
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--muted), transparent 82%);
+  overflow: hidden;
+}
+.sidebar-head h2 { margin: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-scroll { overflow: auto; max-height: calc(100vh - 130px); padding: 10px; display: grid; gap: 10px; }
 .left-sidebar.closed .sidebar-scroll, .right-sidebar.closed .sidebar-scroll, .left-sidebar.closed h2, .right-sidebar.closed h2 { display: none; }
 
@@ -142,7 +163,8 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
 
 .right-sidebar label { display: grid; gap: 4px; font-size: 13px; }
 .right-sidebar input, .right-sidebar select { width: 100%; background: transparent; color: var(--text); border: 1px solid color-mix(in srgb, var(--muted), transparent 70%); border-radius: 8px; padding: 8px; }
-.right-sidebar button { width: 100%; }
+.right-sidebar .sidebar-scroll button { width: 100%; }
+.sidebar-toggle { width: auto !important; flex: 0 0 auto; align-self: center; white-space: nowrap; }
 .row { display: flex !important; align-items: center; gap: 8px; }
 .row input { width: auto; }
 
@@ -159,6 +181,7 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
 
 .reader-content {
   width: min(var(--rf-width), 100%);
+  max-width: min(var(--rf-width), 1400px);
   margin-inline: auto;
   padding: var(--rf-v-pad) var(--rf-h-pad);
   background: var(--surface);
@@ -166,7 +189,7 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
   min-height: calc(100vh - 100px);
   box-shadow: none;
 }
-.reader-content article { font-size: var(--rf-font-size); line-height: var(--rf-line-height); letter-spacing: var(--rf-letter-spacing); }
+.reader-content article { font-size: var(--rf-font-size); line-height: var(--rf-line-height); letter-spacing: var(--rf-letter-spacing); max-inline-size: 140ch; }
 .reader-content p { margin-block: var(--rf-para-space); }
 .reader-content :is(h1, h2, h3) { line-height: 1.25; margin-top: 1.6em; margin-bottom: .6em; }
 .reader-content h1 { font-size: 2em; }
@@ -184,7 +207,7 @@ button.is-active { background: var(--surface-2); border-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
 @media (max-width: 1120px) {
-  .wiki-layout { grid-template-columns: 1fr; padding: 8px; }
+  .wiki-layout { grid-template-columns: 1fr; padding: 8px; max-width: 100%; }
   .left-sidebar, .right-sidebar {
     position: fixed;
     top: 46px;

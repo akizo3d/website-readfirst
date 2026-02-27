@@ -83,9 +83,13 @@ export function RightSidebar({
 
         <label>
           {labels.textWidth}
-          <select value={settings.maxWidthCh > 72 ? 'wide' : 'standard'} onChange={(e) => setSettings((s) => ({ ...s, maxWidthCh: e.target.value === 'wide' ? 80 : 68 }))}>
+          <select
+            value={settings.widthMode || 'standard'}
+            onChange={(e) => setSettings((s) => ({ ...s, widthMode: e.target.value as 'standard' | 'wide' | 'full' }))}
+          >
             <option value="standard">{labels.standard}</option>
             <option value="wide">{labels.wide}</option>
+            <option value="full">Full</option>
           </select>
         </label>
 

@@ -10,6 +10,7 @@ const defaultSettings: ReaderSettings = {
   fontSize: 19,
   lineHeight: 1.72,
   maxWidthCh: 72,
+  widthMode: 'standard',
   paragraphSpacing: 1,
   horizontalPadding: 32,
   verticalPadding: 26,

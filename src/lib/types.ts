@@ -1,11 +1,14 @@
 export type Theme = 'dark' | 'light' | 'sepia';
 export type UiLanguage = 'en' | 'pt-BR';
 
+export type WidthMode = 'standard' | 'wide' | 'full';
+
 export interface ReaderSettings {
   theme: Theme;
   fontSize: number;
   lineHeight: number;
   maxWidthCh: number;
+  widthMode: WidthMode;
   paragraphSpacing: number;
   horizontalPadding: number;
   verticalPadding: number;
