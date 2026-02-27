@@ -16,6 +16,31 @@ interface RightSidebarProps {
   onSearch: (term: string) => void;
   hits: number;
   translationError: string;
+  labels: {
+    appearance: string;
+    hide: string;
+    show: string;
+    searchInText: string;
+    searchPlaceholder: string;
+    results: string;
+    theme: string;
+    dark: string;
+    light: string;
+    sepia: string;
+    fontSize: string;
+    lineHeight: string;
+    paragraphSpacing: string;
+    horizontalPadding: string;
+    verticalPadding: string;
+    textWidth: string;
+    standard: string;
+    wide: string;
+    distractionFree: string;
+    original: string;
+    translatePtBr: string;
+    showPtBr: string;
+    translating: string;
+  };
 }
 
 export function RightSidebar({
@@ -33,41 +58,39 @@ export function RightSidebar({
   onSearch,
   hits,
   translationError,
+  labels,
 }: RightSidebarProps) {
   return (
-    <aside className={`right-sidebar ${isOpen ? 'open' : 'closed'}`} aria-label="Appearance">
+    <aside className={`right-sidebar ${isOpen ? 'open' : 'closed'}`} aria-label={labels.appearance}>
       <div className="sidebar-head">
-        <h2>Appearance</h2>
+        <h2>{labels.appearance}</h2>
         <button type="button" onClick={onToggle} className="sidebar-toggle">
-          {isOpen ? 'Hide' : 'Show'}
+          {isOpen ? labels.hide : labels.show}
         </button>
       </div>
 
       <div className="sidebar-scroll">
         <label>
-          Busca no texto
-          <input type="search" value={query} onChange={(e) => onSearch(e.target.value)} placeholder="Pesquisar..." />
+          {labels.searchInText}
+          <input type="search" value={query} onChange={(e) => onSearch(e.target.value)} placeholder={labels.searchPlaceholder} />
         </label>
-        <small>{hits} resultados</small>
+        <small>{hits} {labels.results}</small>
 
         <label>
-          Tema
-          <select
-            value={settings.theme}
-            onChange={(e) => setSettings((s) => ({ ...s, theme: e.target.value as ReaderSettings['theme'] }))}
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="sepia">Sepia</option>
+          {labels.theme}
+          <select value={settings.theme} onChange={(e) => setSettings((s) => ({ ...s, theme: e.target.value as ReaderSettings['theme'] }))}>
+            <option value="dark">{labels.dark}</option>
+            <option value="light">{labels.light}</option>
+            <option value="sepia">{labels.sepia}</option>
           </select>
         </label>
 
         {[
-          ['fontSize', 'Tamanho da fonte', 14, 30, 1],
-          ['lineHeight', 'Line-height', 1.3, 2.2, 0.05],
-          ['paragraphSpacing', 'Espaço entre parágrafos', 0.6, 2.4, 0.1],
-          ['horizontalPadding', 'Padding horizontal', 12, 100, 1],
-          ['verticalPadding', 'Padding vertical', 12, 80, 1],
+          ['fontSize', labels.fontSize, 14, 30, 1],
+          ['lineHeight', labels.lineHeight, 1.3, 2.2, 0.05],
+          ['paragraphSpacing', labels.paragraphSpacing, 0.6, 2.4, 0.1],
+          ['horizontalPadding', labels.horizontalPadding, 12, 100, 1],
+          ['verticalPadding', labels.verticalPadding, 12, 80, 1],
         ].map(([key, label, min, max, step]) => (
           <label key={key}>
             {label}
@@ -83,13 +106,13 @@ export function RightSidebar({
         ))}
 
         <label>
-          Largura do texto
+          {labels.textWidth}
           <select
             value={settings.maxWidthCh > 72 ? 'wide' : 'standard'}
             onChange={(e) => setSettings((s) => ({ ...s, maxWidthCh: e.target.value === 'wide' ? 80 : 68 }))}
           >
-            <option value="standard">Standard (68ch)</option>
-            <option value="wide">Wide (80ch)</option>
+            <option value="standard">{labels.standard}</option>
+            <option value="wide">{labels.wide}</option>
           </select>
         </label>
 
@@ -99,13 +122,13 @@ export function RightSidebar({
             checked={settings.distractionFree}
             onChange={(e) => setSettings((s) => ({ ...s, distractionFree: e.target.checked }))}
           />
-          Modo sem distração
+          {labels.distractionFree}
         </label>
 
         <hr />
-        <button onClick={() => setMode('original')} className={mode === 'original' ? 'active' : ''}>Original</button>
-        <button onClick={onTranslate} disabled={translating}>{translating ? `Traduzindo ${progress}%` : 'Traduzir pt-BR'}</button>
-        <button onClick={() => setMode('pt-BR')} disabled={!translatedReady}>Mostrar pt-BR</button>
+        <button onClick={() => setMode('original')} className={mode === 'original' ? 'active' : ''}>{labels.original}</button>
+        <button onClick={onTranslate} disabled={translating}>{translating ? `${labels.translating} ${progress}%` : labels.translatePtBr}</button>
+        <button onClick={() => setMode('pt-BR')} disabled={!translatedReady}>{labels.showPtBr}</button>
         {translationError && <p className="error">{translationError}</p>}
       </div>
     </aside>

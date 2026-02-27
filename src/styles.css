@@ -72,6 +72,45 @@ body {
 }
 .actions { display: flex; gap: 8px; }
 
+.lang-switcher {
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 60%);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+.small-muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.saved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.saved-list li {
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 75%);
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+.saved-list small { color: var(--muted); }
+.saved-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.saved-actions button {
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+
 .dropzone {
   max-width: 680px;
   margin: 14vh auto;

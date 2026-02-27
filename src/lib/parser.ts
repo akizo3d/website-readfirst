@@ -23,6 +23,19 @@ function normalizeHtml(raw: string, titleFallback: string): ParsedDocument {
     headings.push({ id, text, level });
   });
 
+  article.querySelectorAll('img').forEach((img) => {
+    if (!img.closest('figure')) {
+      const figure = doc.createElement('figure');
+      img.parentNode?.insertBefore(figure, img);
+      figure.appendChild(img);
+    }
+    img.setAttribute('loading', 'lazy');
+    img.setAttribute('data-readerfirst-image', '1');
+    if (!img.getAttribute('alt')) {
+      img.setAttribute('alt', 'Document image');
+    }
+  });
+
   const textChunks: string[] = [];
   article.querySelectorAll('p, li, blockquote, h1, h2, h3').forEach((node) => {
     const text = node.textContent?.trim();
@@ -34,6 +47,8 @@ function normalizeHtml(raw: string, titleFallback: string): ParsedDocument {
 
   const clean = DOMPurify.sanitize(article.innerHTML, {
     USE_PROFILES: { html: true },
+    ADD_TAGS: ['figure', 'figcaption'],
+    ADD_ATTR: ['loading', 'data-readerfirst-image'],
   });
 
   return {
@@ -48,10 +63,32 @@ function normalizeHtml(raw: string, titleFallback: string): ParsedDocument {
 
 export async function parseDocx(file: File) {
   const arrayBuffer = await file.arrayBuffer();
-  const { value } = await mammoth.convertToHtml({ arrayBuffer }, {
-    includeDefaultStyleMap: true,
-  });
+  const { value } = await mammoth.convertToHtml(
+    { arrayBuffer },
+    {
+      includeDefaultStyleMap: true,
+      convertImage: mammoth.images.imgElement(async (image: { read: (kind: 'base64') => Promise<string>; contentType: string; altText?: string }) => {
+        const base64 = await image.read('base64');
+        return {
+          src: `data:${image.contentType};base64,${base64}`,
+          alt: image.altText || 'Document image',
+        };
+      }),
+    },
+  );
+
   return normalizeHtml(value, file.name.replace(/\.docx$/i, ''));
+}
+
+async function renderPageAsImage(page: pdfjsLib.PDFPageProxy) {
+  const viewport = page.getViewport({ scale: 1.2 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL('image/jpeg', 0.75);
 }
 
 export async function parsePdf(file: File) {
@@ -67,13 +104,19 @@ export async function parsePdf(file: File) {
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
+
     if (lines) {
       pages.push(`<p>${lines}</p>`);
+    }
+
+    const pageImg = await renderPageAsImage(page);
+    if (pageImg) {
+      pages.push(`<figure><img src="${pageImg}" alt="Page ${i} image" data-page="${i}" loading="lazy" /></figure>`);
     }
   }
 
   if (!pages.length) {
-    pages.push('<blockquote>Este PDF parece não conter texto selecionável. Pode ser um arquivo escaneado (imagem). Use OCR antes da importação.</blockquote>');
+    pages.push('<blockquote>This PDF appears to have no selectable text. It may be scanned/image-only. Use OCR before importing.</blockquote>');
   }
 
   return normalizeHtml(`<h1>${file.name.replace(/\.pdf$/i, '')}</h1>${pages.join('')}`, file.name.replace(/\.pdf$/i, ''));

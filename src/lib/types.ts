@@ -1,4 +1,5 @@
 export type Theme = 'dark' | 'light' | 'sepia';
+export type UiLanguage = 'en' | 'pt-BR';
 
 export interface ReaderSettings {
   theme: Theme;
@@ -27,20 +28,28 @@ export interface ParsedDocument {
   textChunks: string[];
 }
 
-export interface TranslationChunk {
-  index: number;
-  original: string;
-  translated: string;
-}
-
-export interface TranslationState {
-  loading: boolean;
-  progress: number;
-  error?: string;
-}
-
 export interface TranslationProviderConfig {
   provider: 'openai' | 'deepl';
   apiKey: string;
   model?: string;
+}
+
+export interface VisionCaptionConfig {
+  apiKey: string;
+  model: string;
+}
+
+export interface SavedReading {
+  id: string;
+  userId: string;
+  title: string;
+  filename: string;
+  createdAt: number;
+  lastOpenedAt: number;
+  tags: string[];
+  originalHtml: string;
+  translatedHtml?: string;
+  headings: HeadingItem[];
+  textChunks: string[];
+  progress: number;
 }
