@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 
-globalThis.__RF_GLOBALS__ = {
+const browserAndRuntimeGlobals = {
   window: 'readonly',
   document: 'readonly',
   localStorage: 'readonly',
@@ -31,7 +31,7 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
       },
-      globals: globalThis.__RF_GLOBALS__,
+      globals: browserAndRuntimeGlobals,
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
