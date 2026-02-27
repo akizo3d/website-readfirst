@@ -1,9 +1,5 @@
 import DOMPurify from 'dompurify';
-import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
 import type { HeadingItem, ParsedDocument } from './types';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
 
 function slugify(input: string) {
   return input.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
@@ -62,12 +58,13 @@ function normalizeHtml(raw: string, titleFallback: string): ParsedDocument {
 }
 
 export async function parseDocx(file: File) {
+  const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
-  const { value } = await mammoth.convertToHtml(
+  const { value } = await mammoth.default.convertToHtml(
     { arrayBuffer },
     {
       includeDefaultStyleMap: true,
-      convertImage: mammoth.images.imgElement(async (image: { read: (kind: 'base64') => Promise<string>; contentType: string; altText?: string }) => {
+      convertImage: mammoth.default.images.imgElement(async (image: { read: (kind: 'base64') => Promise<string>; contentType: string; altText?: string }) => {
         const base64 = await image.read('base64');
         return {
           src: `data:${image.contentType};base64,${base64}`,
@@ -80,7 +77,10 @@ export async function parseDocx(file: File) {
   return normalizeHtml(value, file.name.replace(/\.docx$/i, ''));
 }
 
-async function renderPageAsImage(page: pdfjsLib.PDFPageProxy) {
+async function renderPageAsImage(page: {
+  getViewport: (opts: { scale: number }) => { width: number; height: number };
+  render: (opts: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<unknown> };
+}) {
   const viewport = page.getViewport({ scale: 1.2 });
   const canvas = document.createElement('canvas');
   canvas.width = viewport.width;
@@ -92,6 +92,9 @@ async function renderPageAsImage(page: pdfjsLib.PDFPageProxy) {
 }
 
 export async function parsePdf(file: File) {
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+
   const bytes = new Uint8Array(await file.arrayBuffer());
   const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
   const pages: string[] = [];
@@ -109,7 +112,7 @@ export async function parsePdf(file: File) {
       pages.push(`<p>${lines}</p>`);
     }
 
-    const pageImg = await renderPageAsImage(page);
+    const pageImg = await renderPageAsImage(page as never);
     if (pageImg) {
       pages.push(`<figure><img src="${pageImg}" alt="Page ${i} image" data-page="${i}" loading="lazy" /></figure>`);
     }
