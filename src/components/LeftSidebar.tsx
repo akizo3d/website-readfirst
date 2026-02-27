@@ -60,6 +60,7 @@ export function LeftSidebar({
               <strong>{item.title}</strong>
               <small>{labels.uploadDate}: {new Date(item.createdAt).toLocaleDateString()}</small>
               <small>{labels.lastOpened}: {new Date(item.lastOpenedAt).toLocaleDateString()}</small>
+              {item.tags?.length ? <small>#{item.tags.join(' #')}</small> : null}
               <div className="saved-actions">
                 <button type="button" onClick={() => onOpenSaved(item.id)}>{labels.openSaved}</button>
                 <button type="button" onClick={() => onRenameSaved(item.id)}>{labels.rename}</button>

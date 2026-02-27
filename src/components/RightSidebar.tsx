@@ -1,46 +1,23 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { ReaderSettings } from '../lib/types';
+import type { ReaderSettings, StudyFlashcard, StudyQuizItem } from '../lib/types';
 
 interface RightSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   settings: ReaderSettings;
   setSettings: Dispatch<SetStateAction<ReaderSettings>>;
-  mode: 'original' | 'pt-BR';
-  setMode: Dispatch<SetStateAction<'original' | 'pt-BR'>>;
-  onTranslate: () => void;
-  translating: boolean;
-  progress: number;
-  translatedReady: boolean;
   query: string;
   onSearch: (term: string) => void;
   hits: number;
-  translationError: string;
-  labels: {
-    appearance: string;
-    hide: string;
-    show: string;
-    searchInText: string;
-    searchPlaceholder: string;
-    results: string;
-    theme: string;
-    dark: string;
-    light: string;
-    sepia: string;
-    fontSize: string;
-    lineHeight: string;
-    paragraphSpacing: string;
-    horizontalPadding: string;
-    verticalPadding: string;
-    textWidth: string;
-    standard: string;
-    wide: string;
-    distractionFree: string;
-    original: string;
-    translatePtBr: string;
-    showPtBr: string;
-    translating: string;
-  };
+  labels: Record<string, string>;
+  question: string;
+  onQuestionChange: (value: string) => void;
+  onAsk: () => void;
+  answer: string;
+  onGenerateFlashcards: () => void;
+  flashcards: StudyFlashcard[];
+  onGenerateQuiz: () => void;
+  quiz: StudyQuizItem[];
 }
 
 export function RightSidebar({
@@ -48,25 +25,24 @@ export function RightSidebar({
   onToggle,
   settings,
   setSettings,
-  mode,
-  setMode,
-  onTranslate,
-  translating,
-  progress,
-  translatedReady,
   query,
   onSearch,
   hits,
-  translationError,
   labels,
+  question,
+  onQuestionChange,
+  onAsk,
+  answer,
+  onGenerateFlashcards,
+  flashcards,
+  onGenerateQuiz,
+  quiz,
 }: RightSidebarProps) {
   return (
     <aside className={`right-sidebar ${isOpen ? 'open' : 'closed'}`} aria-label={labels.appearance}>
       <div className="sidebar-head">
         <h2>{labels.appearance}</h2>
-        <button type="button" onClick={onToggle} className="sidebar-toggle">
-          {isOpen ? labels.hide : labels.show}
-        </button>
+        <button type="button" onClick={onToggle} className="sidebar-toggle">{isOpen ? labels.hide : labels.show}</button>
       </div>
 
       <div className="sidebar-scroll">
@@ -107,29 +83,43 @@ export function RightSidebar({
 
         <label>
           {labels.textWidth}
-          <select
-            value={settings.maxWidthCh > 72 ? 'wide' : 'standard'}
-            onChange={(e) => setSettings((s) => ({ ...s, maxWidthCh: e.target.value === 'wide' ? 80 : 68 }))}
-          >
+          <select value={settings.maxWidthCh > 72 ? 'wide' : 'standard'} onChange={(e) => setSettings((s) => ({ ...s, maxWidthCh: e.target.value === 'wide' ? 80 : 68 }))}>
             <option value="standard">{labels.standard}</option>
             <option value="wide">{labels.wide}</option>
           </select>
         </label>
 
         <label className="row">
-          <input
-            type="checkbox"
-            checked={settings.distractionFree}
-            onChange={(e) => setSettings((s) => ({ ...s, distractionFree: e.target.checked }))}
-          />
+          <input type="checkbox" checked={settings.distractionFree} onChange={(e) => setSettings((s) => ({ ...s, distractionFree: e.target.checked }))} />
           {labels.distractionFree}
         </label>
 
-        <hr />
-        <button onClick={() => setMode('original')} className={mode === 'original' ? 'active' : ''}>{labels.original}</button>
-        <button onClick={onTranslate} disabled={translating}>{translating ? `${labels.translating} ${progress}%` : labels.translatePtBr}</button>
-        <button onClick={() => setMode('pt-BR')} disabled={!translatedReady}>{labels.showPtBr}</button>
-        {translationError && <p className="error">{translationError}</p>}
+        <section className="study-panel">
+          <h3>{labels.study}</h3>
+          <label>
+            {labels.askQuestion}
+            <input value={question} onChange={(e) => onQuestionChange(e.target.value)} placeholder={labels.searchPlaceholder} />
+          </label>
+          <button type="button" onClick={onAsk}>{labels.ask}</button>
+          {answer && <p><strong>{labels.answer}:</strong> {answer}</p>}
+
+          <div className="study-actions">
+            <button type="button" onClick={onGenerateFlashcards}>{labels.generate} {labels.flashcards}</button>
+            <button type="button" onClick={onGenerateQuiz}>{labels.generate} {labels.quiz}</button>
+          </div>
+
+          {flashcards.length > 0 && (
+            <ul className="study-list">
+              {flashcards.slice(0, 6).map((f, idx) => <li key={`f-${idx}`}><strong>{f.front}</strong><p>{f.back}</p></li>)}
+            </ul>
+          )}
+
+          {quiz.length > 0 && (
+            <ul className="study-list">
+              {quiz.slice(0, 4).map((q, idx) => <li key={`q-${idx}`}><strong>{q.question}</strong><p>{q.answer}</p></li>)}
+            </ul>
+          )}
+        </section>
       </div>
     </aside>
   );

@@ -39,6 +39,17 @@ export interface VisionCaptionConfig {
   model: string;
 }
 
+export interface StudyFlashcard {
+  front: string;
+  back: string;
+}
+
+export interface StudyQuizItem {
+  question: string;
+  options?: string[];
+  answer: string;
+}
+
 export interface SavedReading {
   id: string;
   userId: string;
@@ -49,7 +60,11 @@ export interface SavedReading {
   tags: string[];
   originalHtml: string;
   translatedHtml?: string;
+  enhancedHtml?: string;
   headings: HeadingItem[];
+  enhancedHeadings?: HeadingItem[];
   textChunks: string[];
   progress: number;
+  flashcards?: StudyFlashcard[];
+  quiz?: StudyQuizItem[];
 }

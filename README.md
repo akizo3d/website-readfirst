@@ -108,3 +108,8 @@ The app sends **only chunk text content** required for translation. File binary 
 - Authentication/accounts
 - Social features/feed
 - Heavy animation or dashboard-style UI
+
+
+## Data schema migration note
+
+ReaderFirst saved items now also persist `enhancedHtml`, `enhancedHeadings`, `flashcards`, and `quiz` fields in IndexedDB for each reading. Older records remain readable and will be upgraded lazily when reopened and saved again.
