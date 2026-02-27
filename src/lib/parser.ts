@@ -67,7 +67,7 @@ export async function parseDocx(file: File) {
     { arrayBuffer },
     {
       includeDefaultStyleMap: true,
-      convertImage: mammoth.images.inline(async (image) => {
+      convertImage: mammoth.images.imgElement(async (image: { read: (kind: 'base64') => Promise<string>; contentType: string; altText?: string }) => {
         const base64 = await image.read('base64');
         return {
           src: `data:${image.contentType};base64,${base64}`,
